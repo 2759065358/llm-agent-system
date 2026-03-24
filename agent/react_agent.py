@@ -81,7 +81,7 @@ class MyReActAgent(ReActAgent):
             )
 
             output = self._llm(prompt)
-            print(output)
+            print("Action:", action)
 
             thought, action = self._parse(output)
 
@@ -94,10 +94,6 @@ class MyReActAgent(ReActAgent):
                 return action.strip()
             # ✅ 调工具
             result = self._call_tool(action)
-            # if isinstance(result, str):
-            #     result = result[:1000]
-            # else:
-            #     result = str(result)[:1000]
             self.current_history.append(
                 f"{output}\nObservation: {result}\n[INFO] RAG已完成，请直接Finish"
             )
