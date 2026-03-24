@@ -18,9 +18,8 @@ tool_registry.register_tool(RAGTool())
 agent = CodeAgent(llm, tool_registry)
 
 while True:
-    query = input("请输入问题,或输入exit退出")
-    if query.lower() in ["exit", "quit"]:
-        break
+    query = input("请输入问题")
+
 
     result = agent.run(query)
     print(result)
