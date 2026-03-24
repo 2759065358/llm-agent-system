@@ -1,22 +1,22 @@
 # LLM Agent系统（ReAct + RAG）
 
-一个基于大语言模型的Agent系统，支持RAG知识检索、工具调用与多轮对话，重点解决Agent执行过程中的稳定性与控制问题。
+一个基于大语言模型的自研Agent系统，实现ReAct推理流程、工具调用与RAG检索增强，支持多轮对话，并对Agent执行过程进行约束与优化，提升稳定性。
 
 ------------------------------------------------------------------------
 
 ## 🚀 项目特点
 
--   基于 ReAct 框架实现多步推理（Thought / Action / Observation）
+-   基于 ReAct 思想自研Agent执行流程（Thought / Action / Observation）
 -   支持 RAG（检索增强生成），减少模型幻觉
--   设计工具调用机制（ToolRegistry），支持模块扩展（RAG / Memory）
--   通过 Prompt 约束 Agent 行为（限制调用次数、控制执行流程）
--   支持 FastAPI 接口调用与 CLI 调试两种模式
+-   实现工具调用控制机制（限制调用次数，避免循环执行）
+-   支持多轮对话与上下文管理
+-   提供三种使用方式：API / CLI / 前端交互
 
 ------------------------------------------------------------------------
 
 ## 🧠 系统架构
 
-LLM + Agent（ReAct） + RAG（Qdrant） + Memory（Neo4j）
+LLM + 自研Agent（ReAct） + RAG（Qdrant） + Memory（Neo4j）
 
 ------------------------------------------------------------------------
 
@@ -25,11 +25,11 @@ LLM + Agent（ReAct） + RAG（Qdrant） + Memory（Neo4j）
     llm-agent-system/
     │
     ├── app/                  # FastAPI入口
-    ├── agent/                # Agent逻辑（ReAct）
+    ├── agent/                # Agent逻辑（自研ReAct）
     ├── rag/                  # RAG模块（向量检索）
     ├── memory/               # 记忆模块（Neo4j）
     ├── context/              # 上下文构建
-    ├── frontend/             # 前端（可选）
+    ├── frontend/             # 前端（Streamlit）
     ├── scripts/              # CLI调试
     │
     ├── requirements.txt
@@ -49,7 +49,7 @@ cp .env.example .env
 
 ## ▶️ 运行方式
 
-### 启动后端服务
+### 1️⃣ 启动后端服务
 
 ``` bash
 uvicorn app.main:app --reload
@@ -67,9 +67,20 @@ POST /chat
 }
 ```
 
+
 ------------------------------------------------------------------------
 
-### CLI 调试
+### 2️⃣ 启动前端
+
+``` bash
+streamlit run frontend/app.py
+```
+
+启动后可在浏览器进行交互式问答。
+
+------------------------------------------------------------------------
+
+### 3️⃣ CLI 调试模式
 
 ``` bash
 python scripts/cli_test.py
@@ -77,22 +88,25 @@ python scripts/cli_test.py
 
 ------------------------------------------------------------------------
 
+
 ## 🔍 核心实现
 
--   Agent执行流程：基于ReAct实现多步推理与工具调用
+-   Agent执行流程：自研ReAct执行框架，解析Thought/Action并调度工具调用
+-   工具系统：基于ToolRegistry实现模块化扩展（RAG / Memory）
 -   RAG模块：基于向量数据库实现知识检索增强
--   Prompt约束：控制Agent执行顺序，避免跳步与无效调用
--   稳定性优化：限制工具调用次数，避免循环调用与超时问题
+-   执行控制：通过Prompt约束与状态控制，避免死循环与无效调用
+-   稳定性优化：减少重复调用，控制推理步骤
 
 ------------------------------------------------------------------------
 
 ## 📌 技术栈
 
 -   Python / FastAPI
+-   ReAct （多步推理与工具调用）
 -   LLM API
--   Qdrant
--   Neo4j
--   ReAct Agent
+-   Qdrant（向量数据库）
+-   Neo4j（图数据库）
+-   Streamlit（前端）
 
 ------------------------------------------------------------------------
 
@@ -103,3 +117,5 @@ python scripts/cli_test.py
 -   Agent执行流程控制
 -   多模块协同（Agent + RAG + Memory）
 -   工程化实现（接口、结构、配置管理）
+
+------------------------------------------------------------------------
