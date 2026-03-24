@@ -105,13 +105,11 @@ class MyReActAgent(ReActAgent):
         return "❌ 未在2步内完成任务"
 
     def _llm(self, prompt: str) -> str:
-        import time
-        start = time.time()
+
 
         messages = [{"role": "user", "content": prompt}]
         result = self.llm.think(messages=messages)
 
-        print(" LLM耗时:", time.time() - start)
 
         if isinstance(result, str):
             return result.strip()
@@ -132,8 +130,6 @@ class MyReActAgent(ReActAgent):
         return thought, action
 
     def _call_tool(self, action: str) -> str:
-        import time
-        start = time.time()
         match = re.match(r"(\w+)\[(.*)\]", action)
         if not match:
             return "❌ Action格式错误"
@@ -150,7 +146,7 @@ class MyReActAgent(ReActAgent):
             tool_input = json.loads(tool_input_str) if tool_input_str else {}
         except:
             tool_input = {"query": tool_input_str}
-        print(f" {tool_name}耗时:", time.time() - start)
+
         return self.tool_registry.execute_tool(
             tool_name,
             json.dumps(tool_input, ensure_ascii=False)
