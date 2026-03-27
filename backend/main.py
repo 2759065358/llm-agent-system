@@ -27,4 +27,4 @@ class QueryRequest(BaseModel):
 @app.post("/chat")
 def chat(req: QueryRequest):
     result = agent.run(req.query)
-    return {"answer": result}
+    return {"answer": result.get("final", "")}

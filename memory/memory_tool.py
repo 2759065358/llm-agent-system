@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import List
-from hello_agents.tools import Tool
+from hello_agents.tools import Tool, ToolParameter
+from hello_agents.tools.response import ToolResponse
+from hello_agents.tools.error_codes import ToolErrorCode
 from hello_agents.memory import MemoryConfig
 from memory.memory_manager import MemoryManager
 from typing import Dict, Any
@@ -33,7 +35,7 @@ class MemoryTool(Tool):
 
         self.current_session_id = None
 
-    def execute(self, action: str, **kwargs) -> str:
+    def execute(self, action: str, **kwargs) -> ToolResponse:
         """执行记忆操作"""
 
         if action == "add":
@@ -49,7 +51,10 @@ class MemoryTool(Tool):
             return self._consolidate(**kwargs)
 
         else:
-            return f" 未知操作: {action}"
+            return ToolResponse.error(
+                code=ToolErrorCode.INVALID_PARAMETER,
+                message=f"未知操作: {action}"
+            )
 
     def _add_memory(
         self,
@@ -57,7 +62,7 @@ class MemoryTool(Tool):
         memory_type: str = "working",
         importance: float = 0.5,
         **metadata
-    ) -> str:
+    ) -> ToolResponse:
 
         try:
 
@@ -76,10 +81,16 @@ class MemoryTool(Tool):
                 metadata=metadata
             )
 
-            return f"✅ 记忆已添加 (ID: {memory_id[:8]}...)"
+            return ToolResponse.success(
+                text=f"✅ 记忆已添加 (ID: {memory_id[:8]}...)",
+                data={"memory_id": memory_id}
+            )
 
         except Exception as e:
-            return f" 添加记忆失败: {str(e)}"
+            return ToolResponse.error(
+                code=ToolErrorCode.EXECUTION_ERROR,
+                message=f"添加记忆失败: {str(e)}"
+            )
 
     def _search_memory(
         self,
@@ -89,7 +100,7 @@ class MemoryTool(Tool):
         memory_type: str = None,
         min_importance: float = 0.0,  
         **kwargs                       
-    ) -> str:
+    ) -> ToolResponse:
 
         try:
 
@@ -107,7 +118,10 @@ class MemoryTool(Tool):
                 results = [m for m in results if m.importance >= min_importance]
 
             if not results:
-                return f"🔍 未找到与 '{query}' 相关的记忆"
+                return ToolResponse.success(
+                    text=f"🔍 未找到与 '{query}' 相关的记忆",
+                    data={"results": []}
+                )
 
             output = [f"🔍 找到 {len(results)} 条相关记忆:"]
 
@@ -119,15 +133,29 @@ class MemoryTool(Tool):
                     f"{i}. [{m.memory_type}] {preview} (重要性: {m.importance:.2f})"
                 )
 
-            return "\n".join(output)
+            return ToolResponse.success(
+                text="\n".join(output),
+                data={
+                    "results": [
+                        {
+                            "memory_type": m.memory_type,
+                            "content": m.content,
+                            "importance": m.importance
+                        } for m in results
+                    ]
+                }
+            )
 
         except Exception as e:
-            return f" 搜索记忆失败: {str(e)}"
+            return ToolResponse.error(
+                code=ToolErrorCode.EXECUTION_ERROR,
+                message=f"搜索记忆失败: {str(e)}"
+            )
 
     def _forget(
         self,
         threshold: float = 0.1
-    ) -> str:
+    ) -> ToolResponse:
 
         try:
 
@@ -135,17 +163,23 @@ class MemoryTool(Tool):
                 threshold=threshold
             )
 
-            return f"🧹 已遗忘 {count} 条记忆"
+            return ToolResponse.success(
+                text=f"🧹 已遗忘 {count} 条记忆",
+                data={"forgotten": count}
+            )
 
         except Exception as e:
-            return f" 遗忘记忆失败: {str(e)}"
+            return ToolResponse.error(
+                code=ToolErrorCode.EXECUTION_ERROR,
+                message=f"遗忘记忆失败: {str(e)}"
+            )
 
     def _consolidate(
         self,
         from_type: str = "working",
         to_type: str = "episodic",
         importance_threshold: float = 0.7
-    ) -> str:
+    ) -> ToolResponse:
 
         try:
 
@@ -155,48 +189,62 @@ class MemoryTool(Tool):
                 importance_threshold=importance_threshold
             )
 
-            return f"🔄 已整合 {count} 条记忆（{from_type} → {to_type}）"
+            return ToolResponse.success(
+                text=f"🔄 已整合 {count} 条记忆（{from_type} → {to_type}）",
+                data={"consolidated": count}
+            )
 
         except Exception as e:
-            return f" 整合记忆失败: {str(e)}"
-    def run(self, input: Dict[str, Any]) -> str:
+            return ToolResponse.error(
+                code=ToolErrorCode.EXECUTION_ERROR,
+                message=f"整合记忆失败: {str(e)}"
+            )
+
+    def run(self, input: Dict[str, Any]) -> ToolResponse:
         """
         标准Tool入口（框架调用这个）
         """
         action = input.get("action")
 
         if not action:
-            return "❌ 缺少 action 参数"
+            return ToolResponse.error(
+                code=ToolErrorCode.MISSING_PARAMETER,
+                message="缺少 action 参数"
+            )
 
         kwargs = {k: v for k, v in input.items() if k != "action"}
 
         return self.execute(action, **kwargs)
 
 
-    def get_parameters(self) -> Dict[str, Any]:
+    def get_parameters(self) -> List[ToolParameter]:
         """
         告诉Agent这个工具怎么用
         """
-        return {
-            "type": "object",
-            "properties": {
-                "action": {
-                    "type": "string",
-                    "enum": ["add", "search", "forget", "consolidate"],
-                    "description": "要执行的操作"
-                },
-                "query": {
-                    "type": "string",
-                    "description": "搜索查询（用于 search）"
-                },
-                "content": {
-                    "type": "string",
-                    "description": "记忆内容（用于 add）"
-                },
-                "memory_type": {
-                    "type": "string",
-                    "description": "记忆类型"
-                }
-            },
-            "required": ["action"]
-        }
+        return [
+            ToolParameter(
+                name="action",
+                type="string",
+                description="要执行的操作：add/search/forget/consolidate",
+                required=True
+            ),
+            ToolParameter(
+                name="query",
+                type="string",
+                description="搜索查询（用于 search）",
+                required=False
+            ),
+            ToolParameter(
+                name="content",
+                type="string",
+                description="记忆内容（用于 add）",
+                required=False
+            ),
+            ToolParameter(
+                name="memory_type",
+                type="string",
+                description="记忆类型",
+                required=False,
+                default="working"
+            ),
+        ]

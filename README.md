@@ -24,7 +24,7 @@ LLM + Agent（ReAct） + RAG（Qdrant） + Memory（Neo4j）
 
     llm-agent-system/
     │
-    ├── app/                  # FastAPI入口
+    ├── backend/              # FastAPI入口
     ├── agent/                # Agent逻辑（ReAct）
     ├── rag/                  # RAG模块（向量检索）
     ├── memory/               # 记忆模块（Neo4j）
@@ -52,7 +52,7 @@ cp .env.example .env
 ### 1️⃣ 启动后端服务
 
 ``` bash
-uvicorn app.main:app --reload
+uvicorn backend.main:app --reload
 ```
 
 接口：

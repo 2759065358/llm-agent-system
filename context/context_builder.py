@@ -1,8 +1,8 @@
 from typing import Optional, List
-from hello_agents.tools import RAGTool
 from hello_agents.context import ContextBuilder, ContextConfig
 from hello_agents.core.message import Message
 from memory.memory_tool import MemoryTool
+from rag.rag_tool import RAGTool
 from dotenv import load_dotenv
 load_dotenv()
 import os
