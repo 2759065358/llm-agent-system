@@ -7,3 +7,9 @@ neo4j
 httpx
 hello-agents
 dashscope
+streamlit
+requests
+sentence-transformers
+pypdf
+ebooklib
+beautifulsoup4

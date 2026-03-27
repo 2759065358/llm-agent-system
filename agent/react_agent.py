@@ -2,6 +2,7 @@ import re
 import json
 from typing import Optional, List, Tuple
 from hello_agents import ReActAgent, HelloAgentsLLM, Config, ToolRegistry
+from hello_agents.tools.response import ToolResponse
 
 
 STRICT_REACT_PROMPT = """你是一个严格遵循流程的文档分析助手。
@@ -81,9 +82,9 @@ class MyReActAgent(ReActAgent):
             )
 
             output = self._llm(prompt)
-            print("Action:", action)
 
             thought, action = self._parse(output)
+            print("Action:", action)
 
             if not action:
                 return "❌ LLM输出格式错误（无Action）"
@@ -143,10 +144,13 @@ class MyReActAgent(ReActAgent):
         except:
             tool_input = {"query": tool_input_str}
 
-        return self.tool_registry.execute_tool(
+        response = self.tool_registry.execute_tool(
             tool_name,
             json.dumps(tool_input, ensure_ascii=False)
         )
+        if isinstance(response, ToolResponse):
+            return response.text
+        return str(response)
 
     def _render_tools(self) -> str:
 

@@ -31,11 +31,9 @@ class CodeAgent:
 
         original_query = query
 
-
         context = self.context_builder.build(query)
 
-
-        result = self.react_agent.run(query)
+        result = self.react_agent.run(context)
 
 
         final = result
@@ -44,10 +42,7 @@ class CodeAgent:
         try:
             self.memory_tool.run({
                 "action": "add",
-                "content": {
-                    "query": original_query,
-                    "answer": final
-                }
+                "content": f"Q: {original_query}\nA: {final}"
             })
         except Exception as e:
             print(f"[WARNING] memory write failed: {e}")
