@@ -1,11 +1,10 @@
 from typing import Optional, List
-from hello_agents.tools import RAGTool
 from hello_agents.context import ContextBuilder, ContextConfig
 from hello_agents.core.message import Message
 from memory.memory_tool import MemoryTool
+from rag.rag_tool import RAGTool
 from dotenv import load_dotenv
 load_dotenv()
-import os
 
 
 class MyContextBuilder:
@@ -15,7 +14,8 @@ class MyContextBuilder:
         self.memory_tool = memory_tool if isinstance(memory_tool, MemoryTool) else None
 
         try:
-            self.rag_tool = RAGTool() if rag_pipeline or rag_pipeline is None else None
+            # 默认创建 RAGTool；允许外部注入自定义 rag_tool/pipeline（用于测试或替换实现）
+            self.rag_tool = rag_pipeline if rag_pipeline is not None else RAGTool()
         except Exception:
             self.rag_tool = None
 

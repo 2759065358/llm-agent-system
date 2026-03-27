@@ -1,7 +1,9 @@
 import re
 import json
+import os
 from typing import Optional, List, Tuple
 from hello_agents import ReActAgent, HelloAgentsLLM, Config, ToolRegistry
+from hello_agents.tools.response import ToolResponse
 
 
 STRICT_REACT_PROMPT = """你是一个严格遵循流程的文档分析助手。
@@ -9,13 +11,12 @@ STRICT_REACT_PROMPT = """你是一个严格遵循流程的文档分析助手。
 ## 可用工具
 {tools}
 
-## 强制规则（必须遵守）
-1. 如果未调用过rag则先调用 rag 工具
-2. 只能调用一次 rag
-3. 调用 rag 后必须直接 Finish
-4. 不允许跳过 Action
-5. 不允许输出无 Thought/Action 格式内容
-6. 如果历史中已经存在 Observation，说明 RAG 已完成，必须直接 Finish，禁止再次调用 rag
+## 策略规则（优先遵守）
+1. 默认优先调用 rag 获取证据，再回答
+2. 如果问题是常识、寒暄或无需外部信息，可直接 Finish
+3. 最多调用一次 rag，避免循环
+4. 每一步都必须输出 Thought 和 Action
+5. 无论是否调用工具，最终都必须以 Finish 结束
 
 输出必须严格使用以下英文格式（禁止中文替代）：
 Thought: ...
@@ -27,7 +28,6 @@ Action: ...
 
 严格禁止：
 - 使用“动作”、“结尾”等中文替代 Action / Finish
-- 在未执行 Finish 前输出最终答案内容
 - 输出解释性段落代替 Action
 - 重复调用 rag
 
@@ -60,7 +60,7 @@ class MyReActAgent(ReActAgent):
         super().__init__(name, llm, system_prompt, config)
 
         self.tool_registry = tool_registry
-        self.max_steps = 2   
+        self.max_steps = int(os.getenv("AGENT_MAX_STEPS", "4"))
         self.current_history: List[str] = []
         self.used_rag = False
         self.prompt_template = STRICT_REACT_PROMPT
@@ -81,9 +81,9 @@ class MyReActAgent(ReActAgent):
             )
 
             output = self._llm(prompt)
-            print("Action:", action)
 
             thought, action = self._parse(output)
+            print("Action:", action)
 
             if not action:
                 return "❌ LLM输出格式错误（无Action）"
@@ -95,10 +95,10 @@ class MyReActAgent(ReActAgent):
             # ✅ 调工具
             result = self._call_tool(action)
             self.current_history.append(
-                f"{output}\nObservation: {result}\n[INFO] RAG已完成，请直接Finish"
+                f"{output}\nObservation: {result}"
             )
 
-        return "❌ 未在2步内完成任务"
+        return f"❌ 未在{self.max_steps}步内完成任务"
 
     def _llm(self, prompt: str) -> str:
 
@@ -112,7 +112,7 @@ class MyReActAgent(ReActAgent):
 
         try:
             return "".join(chunk for chunk in result if chunk).strip()
-        except:
+        except Exception:
             return str(result)
 
     def _parse(self, text: str) -> Tuple[str, str]:
@@ -140,13 +140,21 @@ class MyReActAgent(ReActAgent):
 
         try:
             tool_input = json.loads(tool_input_str) if tool_input_str else {}
-        except:
+        except Exception:
             tool_input = {"query": tool_input_str}
 
-        return self.tool_registry.execute_tool(
+        response = self.tool_registry.execute_tool(
             tool_name,
             json.dumps(tool_input, ensure_ascii=False)
         )
+        if isinstance(response, ToolResponse):
+            observation = {
+                "status": response.status.value,
+                "text": response.text,
+                "data": response.data or {}
+            }
+            return json.dumps(observation, ensure_ascii=False)
+        return str(response)
 
     def _render_tools(self) -> str:
 

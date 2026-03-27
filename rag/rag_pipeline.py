@@ -165,9 +165,11 @@ class SimpleRAGPipeline:
     def add_document(self, content: str):
 
         # 👉 自动判断是文件还是文本
+        source = "inline_text"
         if os.path.exists(content):
             print(f"📄 解析文件: {content}")
             text = self._load_file(content)
+            source = os.path.abspath(content)
         else:
             text = content
 
@@ -182,7 +184,11 @@ class SimpleRAGPipeline:
             points.append({
                 "id": str(uuid.uuid4()),
                 "vector": vectors[i],
-                "payload": {"content": chunk}
+                "payload": {
+                    "content": chunk,
+                    "source": source,
+                    "chunk_index": i
+                }
             })
 
         print(f"🚀 写入向量数量: {len(points)}")
@@ -197,7 +203,7 @@ class SimpleRAGPipeline:
     # =========================
     # 检索
     # =========================
-    def retrieve(self, query: str, top_k: int = 5) -> List[str]:
+    def retrieve(self, query: str, top_k: int = 5) -> List[dict]:
 
         query_vector = self._embed(query)[0]
 
@@ -207,7 +213,17 @@ class SimpleRAGPipeline:
             limit=top_k
         )
 
-        return [r.payload["content"] for r in results]
+        output = []
+        for rank, r in enumerate(results, start=1):
+            output.append({
+                "id": str(getattr(r, "id", "")),
+                "score": float(getattr(r, "score", 0.0)),
+                "rank": rank,
+                "content": r.payload.get("content", ""),
+                "source": r.payload.get("source", "unknown"),
+                "chunk_index": r.payload.get("chunk_index")
+            })
+        return output
 
     # =========================
     # chunk

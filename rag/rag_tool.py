@@ -1,5 +1,7 @@
-from typing import Dict, Any
-from hello_agents.tools import Tool
+from typing import Dict, Any, List
+from hello_agents.tools import Tool, ToolParameter
+from hello_agents.tools.response import ToolResponse
+from hello_agents.tools.errors import ToolErrorCode
 from rag.rag_pipeline import SimpleRAGPipeline
 
 
@@ -13,29 +15,68 @@ class RAGTool(Tool):
 
         self.pipeline = SimpleRAGPipeline()
 
-    def run(self, input: Dict[str, Any]) -> str:
+    def run(self, input: Dict[str, Any]) -> ToolResponse:
 
         action = input.get("action")
+        if not action:
+            action = "search"
 
         if action == "search":
             query = input.get("query", "")
-            result = self.pipeline.retrieve(query)
-            return str(result)
+            top_k = int(input.get("top_k", 5))
+            result = self.pipeline.retrieve(query, top_k=top_k)
+
+            lines = []
+            for item in result:
+                lines.append(
+                    f"[{item['rank']}] score={item['score']:.4f} source={item['source']} chunk={item['chunk_index']}\n{item['content']}"
+                )
+
+            return ToolResponse.success(
+                text="\n\n".join(lines) if lines else "未检索到相关内容",
+                data={
+                    "results": result,
+                    "top_k": top_k,
+                    "query": query
+                }
+            )
 
         elif action == "add":
             content = input.get("content", "")
             self.pipeline.add_document(content)
-            return "✅ 已加入知识库"
+            return ToolResponse.success(text="✅ 已加入知识库", data={"content": content})
 
-        return "❌ 未知action"
+        return ToolResponse.error(
+            code=ToolErrorCode.INVALID_PARAM,
+            message=f"❌ 未知action: {action}"
+        )
 
-    def get_parameters(self) -> Dict[str, Any]:
-        return {
-            "type": "object",
-            "properties": {
-                "action": {"type": "string"},
-                "query": {"type": "string"},
-                "content": {"type": "string"}
-            },
-            "required": ["action"]
-        }
+    def get_parameters(self) -> List[ToolParameter]:
+        return [
+            ToolParameter(
+                name="action",
+                type="string",
+                description="动作类型：search 或 add",
+                required=False,
+                default="search"
+            ),
+            ToolParameter(
+                name="query",
+                type="string",
+                description="检索查询（action=search 时使用）",
+                required=False
+            ),
+            ToolParameter(
+                name="top_k",
+                type="integer",
+                description="返回条数（action=search 时使用）",
+                required=False,
+                default=5
+            ),
+            ToolParameter(
+                name="content",
+                type="string",
+                description="待写入知识库内容（action=add 时使用）",
+                required=False
+            ),
+        ]

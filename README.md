@@ -24,7 +24,7 @@ LLM + Agent（ReAct） + RAG（Qdrant） + Memory（Neo4j）
 
     llm-agent-system/
     │
-    ├── app/                  # FastAPI入口
+    ├── backend/              # FastAPI入口
     ├── agent/                # Agent逻辑（ReAct）
     ├── rag/                  # RAG模块（向量检索）
     ├── memory/               # 记忆模块（Neo4j）
@@ -45,6 +45,13 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
+可选配置：
+
+```bash
+# Agent最多推理步数（默认 4）
+export AGENT_MAX_STEPS=6
+```
+
 ------------------------------------------------------------------------
 
 ## ▶️ 运行方式
@@ -52,7 +59,7 @@ cp .env.example .env
 ### 1️⃣ 启动后端服务
 
 ``` bash
-uvicorn app.main:app --reload
+uvicorn backend.main:app --reload
 ```
 
 接口：
@@ -117,5 +124,21 @@ python scripts/cli_test.py
 -   Agent执行流程控制
 -   多模块协同（Agent + RAG + Memory）
 -   工程化实现（接口、结构、配置管理）
+
+------------------------------------------------------------------------
+
+## ✅ 变更提交规范（默认执行）
+
+后续代码修改默认遵循以下方式，确保变更可合并：
+
+1. 先修复/实现功能，再补充最小可运行测试（`tests/test_*.py`）。
+2. 提交前至少执行：
+
+```bash
+python -m compileall -q .
+python -m unittest discover -s tests -p "test_*.py"
+```
+
+3. 变更说明需包含：改动范围、影响模块、验证命令与结果。
 
 ------------------------------------------------------------------------
