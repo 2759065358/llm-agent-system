@@ -27,4 +27,7 @@ class QueryRequest(BaseModel):
 @app.post("/chat")
 def chat(req: QueryRequest):
     result = agent.run(req.query)
-    return {"answer": result}
+
+    # 统一返回字符串，便于前端直接展示
+    answer = result.get("final") if isinstance(result, dict) else str(result)
+    return {"answer": answer}

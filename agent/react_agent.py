@@ -81,9 +81,8 @@ class MyReActAgent(ReActAgent):
             )
 
             output = self._llm(prompt)
-            print("Action:", action)
-
             thought, action = self._parse(output)
+            print("Action:", action)
 
             if not action:
                 return "❌ LLM输出格式错误（无Action）"
@@ -142,6 +141,10 @@ class MyReActAgent(ReActAgent):
             tool_input = json.loads(tool_input_str) if tool_input_str else {}
         except:
             tool_input = {"query": tool_input_str}
+
+        # 兼容当前RAG工具协议：当仅给出 query/top_k 时，默认执行 search
+        if tool_name == "rag" and "action" not in tool_input:
+            tool_input["action"] = "search"
 
         return self.tool_registry.execute_tool(
             tool_name,

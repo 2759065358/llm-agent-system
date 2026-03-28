@@ -24,7 +24,7 @@ LLM + 自研Agent（ReAct） + RAG（Qdrant） + Memory（Neo4j）
 
     llm-agent-system/
     │
-    ├── app/                  # FastAPI入口
+    ├── backend/              # FastAPI入口
     ├── agent/                # Agent逻辑（自研ReAct）
     ├── rag/                  # RAG模块（向量检索）
     ├── memory/               # 记忆模块（Neo4j）
@@ -45,6 +45,8 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
+> 依赖说明：`hello-agents` 建议固定为 `0.2.8`，避免版本漂移导致接口不兼容。
+
 ------------------------------------------------------------------------
 
 ## ▶️ 运行方式
@@ -52,7 +54,7 @@ cp .env.example .env
 ### 1️⃣ 启动后端服务
 
 ``` bash
-uvicorn app.main:app --reload
+uvicorn backend.main:app --reload
 ```
 
 接口：
