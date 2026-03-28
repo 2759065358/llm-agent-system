@@ -5,5 +5,5 @@ pydantic
 qdrant-client
 neo4j
 httpx
-hello-agents
+hello-agents==0.2.8
 dashscope
