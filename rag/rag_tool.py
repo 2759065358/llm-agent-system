@@ -8,7 +8,7 @@ class RAGTool(Tool):
     def __init__(self):
         super().__init__(
             name="rag",
-            description="RAG知识库工具"
+            description="RAG知识库工具（支持chunk策略与rerank）"
         )
 
         self.pipeline = SimpleRAGPipeline()
@@ -19,13 +19,19 @@ class RAGTool(Tool):
 
         if action == "search":
             query = input.get("query", "")
-            result = self.pipeline.retrieve(query)
+            top_k = int(input.get("top_k", 5))
+            enable_rerank = bool(input.get("enable_rerank", True))
+            result = self.pipeline.retrieve(
+                query=query,
+                top_k=top_k,
+                enable_rerank=enable_rerank,
+            )
             return str(result)
 
-        elif action == "add":
+        if action == "add":
             content = input.get("content", "")
             self.pipeline.add_document(content)
-            return "✅ 已加入知识库"
+            return f"✅ 已加入知识库（chunk策略={self.pipeline.chunk_strategy}）"
 
         return "❌ 未知action"
 
@@ -35,7 +41,9 @@ class RAGTool(Tool):
             "properties": {
                 "action": {"type": "string"},
                 "query": {"type": "string"},
-                "content": {"type": "string"}
+                "content": {"type": "string"},
+                "top_k": {"type": "integer", "default": 5},
+                "enable_rerank": {"type": "boolean", "default": True},
             },
             "required": ["action"]
         }

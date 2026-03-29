@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from hello_agents import HelloAgentsLLM, ToolRegistry
+from hello_agents.core.llm import HelloAgentsLLM
+from hello_agents.tools.registry import ToolRegistry
 from memory.memory_tool import MemoryTool
 from rag.rag_tool import RAGTool
 from agent.agent import CodeAgent

@@ -1,7 +1,10 @@
 import re
 import json
 from typing import Optional, List, Tuple
-from hello_agents import ReActAgent, HelloAgentsLLM, Config, ToolRegistry
+from hello_agents.agents.react_agent import ReActAgent
+from hello_agents.core.llm import HelloAgentsLLM
+from hello_agents.core.config import Config
+from hello_agents.tools.registry import ToolRegistry
 
 
 STRICT_REACT_PROMPT = """你是一个严格遵循流程的文档分析助手。

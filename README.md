@@ -121,3 +121,42 @@ python scripts/cli_test.py
 -   工程化实现（接口、结构、配置管理）
 
 ------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+## 🧪 新增能力（工业化升级第一批）
+
+### 1) 三种 Chunk 策略 + 对比实验
+
+- RAG 支持 `100 / 300 / 500` 三种 chunk 策略（可通过 `RAG_CHUNK_STRATEGY` 配置）。
+- 对比实验脚本：
+
+```bash
+python scripts/chunk_strategy_experiment.py \
+  --content_file README.md \
+  --query "这个项目的核心能力是什么" \
+  --query "系统架构是什么" \
+  --top_k 3
+```
+
+### 2) Retriever + Rerank
+
+- 在向量召回后新增 rerank（默认关键词重排）。
+- 预留 `CrossEncoderReranker` 接口，后续可替换为 cross-encoder 模型。
+
+### 3) 自动评估模块
+
+- 输入 `question + answer`（可选 reference），输出准确率与日志。
+
+```bash
+python scripts/eval_cli.py \
+  --question "什么是RAG" \
+  --answer "RAG是检索增强生成..." \
+  --reference "RAG是检索增强生成"
+```
+
+### 4) Agent 架构升级
+
+- 主流程从单一 ReAct 执行，升级为 `planner + executor`：
+  - Planner 负责生成执行计划（可容错 fallback）
+  - Executor 负责按计划调用工具与汇总回答
