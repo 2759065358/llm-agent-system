@@ -7,3 +7,5 @@ neo4j
 httpx
 hello-agents==0.2.8
 dashscope
+
+sentence-transformers
